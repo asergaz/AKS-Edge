@@ -46,6 +46,10 @@ if ($skipAzureArc) {
     Write-Host "Azure setup and Arc connection will be skipped as required details are not available" -ForegroundColor Yellow
 }
 
+if (!(Test-Path -Path "C:\akseeLearn")) {
+    New-Item -ItemType Directory -Path "C:\akseeLearn" | Out-Null
+}
+Push-Location "C:\akseeLearn"
 $installDir = $((Get-Location).Path)
 $productName = "AKS Edge Essentials - K3s"
 $networkplugin = "flannel"
