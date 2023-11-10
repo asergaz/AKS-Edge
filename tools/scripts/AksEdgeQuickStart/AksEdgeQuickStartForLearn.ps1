@@ -4,11 +4,13 @@
 param(
     [String] $SubscriptionId,
     [String] $TenantId,
-    [String] $Location,
-    [Switch] $UseK8s=$false,
-    [string] $Tag,
-    [string] $ResourceGroupName
+    [String] $ResourceGroupName
 )
+
+[String] $Location = "westus3"
+[Switch] $UseK8s = $false
+[String] $Tag = $null
+
 #Requires -RunAsAdministrator
 New-Variable -Name gAksEdgeQuickStartVersion -Value "1.0.231016.1400" -Option Constant -ErrorAction SilentlyContinue
 
@@ -103,7 +105,11 @@ $aksedgeConfig = @"
                 "CpuCount": 2,
                 "MemoryInMB": 2048,
                 "DataSizeInGB": 20
-            }
+            },
+            "WindowsNode": {
+                "CpuCount": 2,
+                "MemoryInMB": 2048
+          }
         }
     ]
 }
