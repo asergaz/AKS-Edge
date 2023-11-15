@@ -4,7 +4,9 @@
 param(
     [String] $SubscriptionId,
     [String] $TenantId,
-    [String] $ResourceGroupName
+    [String] $ResourceGroupName,
+    [Switch] $WindowsNode,
+    [Switch] $ArcEnabled
 )
 
 [String] $Location = "westus3"
@@ -27,24 +29,25 @@ if (! [Environment]::Is64BitProcess) {
 }
 #Validate inputs
 $skipAzureArc = $false
-if ([string]::IsNullOrEmpty($SubscriptionId)) {
-    Write-Host "Warning: Require SubscriptionId for Azure Arc" -ForegroundColor Cyan
+if($ArcEnabled){
+    if ([string]::IsNullOrEmpty($SubscriptionId)) {
+        Write-Host "Warning: Require SubscriptionId for Azure Arc" -ForegroundColor Cyan
+        $skipAzureArc = $true
+    }
+    if ([string]::IsNullOrEmpty($TenantId)) {
+        Write-Host "Warning: Require TenantId for Azure Arc" -ForegroundColor Cyan
+        $skipAzureArc = $true
+    }
+    if ([string]::IsNullOrEmpty($Location)) {
+        Write-Host "Warning: Require Location for Azure Arc" -ForegroundColor Cyan
+        $skipAzureArc = $true
+    } elseif ($arcLocations -inotcontains $Location) {
+        Write-Host "Error: Location $Location is not supported for Azure Arc" -ForegroundColor Red
+        Write-Host "Supported Locations : $arcLocations"
+        exit -1
+    }
+} else {
     $skipAzureArc = $true
-}
-if ([string]::IsNullOrEmpty($TenantId)) {
-    Write-Host "Warning: Require TenantId for Azure Arc" -ForegroundColor Cyan
-    $skipAzureArc = $true
-}
-if ([string]::IsNullOrEmpty($Location)) {
-    Write-Host "Warning: Require Location for Azure Arc" -ForegroundColor Cyan
-    $skipAzureArc = $true
-} elseif ($arcLocations -inotcontains $Location) {
-    Write-Host "Error: Location $Location is not supported for Azure Arc" -ForegroundColor Red
-    Write-Host "Supported Locations : $arcLocations"
-    exit -1
-}
-
-if ($skipAzureArc) {
     Write-Host "Azure setup and Arc connection will be skipped as required details are not available" -ForegroundColor Yellow
 }
 
@@ -83,6 +86,8 @@ $aideuserConfig = @"
     "AksEdgeConfigFile": "aksedge-config.json"
 }
 "@
+
+if ($WindowsNode){
 $aksedgeConfig = @"
 {
     "SchemaVersion": "1.9",
@@ -114,6 +119,35 @@ $aksedgeConfig = @"
     ]
 }
 "@
+} else {
+$aksedgeConfig = @"
+{
+    "SchemaVersion": "1.9",
+    "Version": "1.0",
+    "DeploymentType": "SingleMachineCluster",
+    "Init": {
+        "ServiceIPRangeSize": 10
+    },
+    "Network": {
+        "NetworkPlugin": "$networkplugin",
+        "InternetDisabled": false
+    },
+    "User": {
+        "AcceptEula": true,
+        "AcceptOptionalTelemetry": true
+    },
+    "Machines": [
+        {
+            "LinuxNode": {
+                "CpuCount": 2,
+                "MemoryInMB": 2048,
+                "DataSizeInGB": 20
+            }
+        }
+    ]
+}
+"@
+}
 
 ###
 # Main
