@@ -4,14 +4,13 @@
 param(
     [String] $SubscriptionId,
     [String] $TenantId,
+    [String] $Location = "westus3",
     [String] $ResourceGroupName,
+    [String] $Tag,
+    [Switch] $UseK8s,
     [Switch] $WindowsNode,
     [Switch] $ArcEnabled
 )
-
-[String] $Location = "westus3"
-[Switch] $UseK8s = $false
-[String] $Tag = $null
 
 #Requires -RunAsAdministrator
 New-Variable -Name gAksEdgeQuickStartVersion -Value "1.0.231016.1400" -Option Constant -ErrorAction SilentlyContinue
