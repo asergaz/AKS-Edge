@@ -741,7 +741,7 @@ function Install-AideMsi {
         $ProgressPreference = 'SilentlyContinue'
         try {
             if (-not (Test-Path $msiFile)) {
-                Start-BitsTransfer -Source $url -OutFile $msiFile
+                Start-BitsTransfer -Source $url -Destination $msiFile
             }
         } catch {
             Write-Host "failed to download from $url"
@@ -754,7 +754,7 @@ function Install-AideMsi {
             $argList = '/I AksEdge.msi ADDLOCAL=CoreFeature,WindowsNodeFeature /passive '
             try {
                 if (-not (Test-Path $winFile)) {
-                    Start-BitsTransfer -Source $winUrl -OutFile $winFile
+                    Start-BitsTransfer -Source $winUrl -Destination $winFile
                 }
                 if (Test-Path $winFile) {
                     Write-Host "Unzip WindowsInstallFiles.."
