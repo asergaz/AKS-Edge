@@ -113,7 +113,7 @@ $aksedgeConfig = @"
             "WindowsNode": {
                 "CpuCount": 2,
                 "MemoryInMB": 2048
-          }
+            }
         }
     ]
 }
@@ -164,9 +164,17 @@ Start-Transcript -Path $transcriptFile
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
 # Download the AksEdgeDeploy modules from Azure/AksEdge
-$fork ="Azure"
-$branch="main"
-$url = "https://github.com/$fork/AKS-Edge/archive/$branch.zip"
+# $fork ="Azure"
+# $branch="main"
+# $url = "https://github.com/$fork/AKS-Edge/archive/$branch.zip"
+
+# TODO: Remove this after tests
+# ************
+$fork ="asergaz"
+$branch="learnmodule"
+$url = "https://github.com/$fork/AKS-Edge/archive/refs/heads/$branch.zip"
+# ************
+
 $zipFile = "AKS-Edge-$branch.zip"
 $workdir = "$installDir\AKS-Edge-$branch"
 if (-Not [string]::IsNullOrEmpty($Tag)) {
