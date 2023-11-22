@@ -168,7 +168,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 # $branch="main"
 # $url = "https://github.com/$fork/AKS-Edge/archive/$branch.zip"
 
-# TODO: Remove this after tests
+# TODO: Remove this after tests & uncomment the above
 # ************
 $fork ="asergaz"
 $branch="learnmodule"
@@ -186,7 +186,7 @@ Write-Host "Step 1 : Azure/AKS-Edge repo setup"
 
 if (!(Test-Path -Path "$installDir\$zipFile")) {
     try {
-        Invoke-WebRequest -Uri $url -OutFile $installDir\$zipFile
+        Start-BitsTransfer -Source $url -Destination $installDir\$zipFile
     } catch {
         Write-Host "Error: Downloading Aide Powershell Modules failed" -ForegroundColor Red
         Stop-Transcript | Out-Null
