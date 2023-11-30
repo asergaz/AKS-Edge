@@ -4,12 +4,15 @@
 param(
     [String] $SubscriptionId,
     [String] $TenantId,
-    [String] $Location = "westus3",
+    [String] $Location = "westus",
     [String] $ResourceGroupName,
     [String] $Tag,
     [Switch] $UseK8s,
     [Switch] $WindowsNode,
     [Switch] $ArcEnabled
+    [String] $storageAccountName,
+    [String] $storageAccountKey,
+    [String] $storageAccountFile,
 )
 
 #Requires -RunAsAdministrator
@@ -60,6 +63,30 @@ $networkplugin = "flannel"
 if ($UseK8s) {
     $productName ="AKS Edge Essentials - K8s"
     $networkplugin = "calico"
+}
+
+#Mount the Azure File Share
+$skipAzureFileShare = $false
+if ([string]::IsNullOrEmpty($storageAccountName)) {
+    Write-Host "Warning: Require storageAccountName for Azure File Share" -ForegroundColor Cyan
+    $skipAzureFileShare = $true
+}
+if ([string]::IsNullOrEmpty($storageAccountKey)) {
+    Write-Host "Warning: Require storageAccountKey for Azure File Share" -ForegroundColor Cyan
+    $skipAzureFileShare = $true
+}
+if ([string]::IsNullOrEmpty($storageAccountFile)) {
+    Write-Host "Warning: Require storageAccountFile for Azure File Share" -ForegroundColor Cyan
+    $skipAzureFileShare = $true
+}
+if($skipAzureFileShare)
+{
+    Write-Host "Azure File Share will be skipped as required details are not available" -ForegroundColor Yellow
+} else {
+    # Save the password so the drive will persist on reboot
+    cmd.exe /C "cmdkey /add:``"$storageAccountName.file.core.windows.net``" /user:``"localhost\$storageAccountName``" /pass:``"$storageAccountKey``""
+    # Mount the drive
+    New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$storageAccountName.file.core.windows.net\$storageAccountFile" -Persist
 }
 
 # Here string for the json content
@@ -228,6 +255,25 @@ if ($azcfg.Auth.Password) {
 
 # Download, install and deploy AKS EE 
 Write-Host "Step 3: Download, install and deploy AKS Edge Essentials"
+# when azure file share is available we will use the msi file from there
+if(!$skipAzureFileShare){
+    if($WindowsNode){
+        Expand-Archive -Path "Z:\windows-node.zip" -DestinationPath "Z:\" -Force
+        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i Z:\k3s.msi ADDLOCAL=CoreFeature,WindowsNodeFeature /li $installDir\k3s-install.log /qn" -PassThru
+    }
+    else{
+        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i Z:\k3s.msi /li $installDir\k3s-install.log /qn" -PassThru
+    }
+    $process.WaitForExit()
+    $exitCode = $process.ExitCode
+    if ($exitCode -eq 0) {
+        Write-Host "Installing k3s.msi from Azure File Share succeeded." -ForegroundColor Green
+    } else {
+        Write-Host "Installation of k3s.msi from Azure File Share failed with exit code $exitCode." -ForegroundColor Red
+        Stop-Transcript | Out-Null
+        exit -1
+    }
+}
 # invoke the workflow, the json file already updated above.
 $retval = Start-AideWorkflow -jsonFile $aidejson
 if ($retval) {
